@@ -20,35 +20,57 @@ import datetime
 import re
 from sklearn import preprocessing, manifold
 
-def plot_hist(dataFrame, cal_method, varname, bin_num):
-    x = np.array(dataFrame.groupby('buyer_admin_id').agg({varname:cal_method})[varname])
+def plot_hist(trainFrame, testFrame, cal_method, varname, bin_num):
+    x = np.array(trainFrame.groupby('buyer_admin_id').agg({varname:cal_method})[varname])
     x_p1 = np.percentile(x, 1)
     x_p99 = np.percentile(x, 99)
+    x_test = np.array(testFrame.groupby('buyer_admin_id').agg({varname:cal_method})[varname])
+    x_test_p1 = np.percentile(x, 1)
+    x_test_p99 = np.percentile(x, 99)
     # mu = x.mean()
     # sigma = x.std()
     # x_new = [x_p1 if x_item <= x_p1 else x_p99 if x_item >= x_p99 else x_item for x_item in x]
     x_new = [x_item for x_item in x if x_item < x_p99]
+    x_test_new = [x_test_item for x_test_item in x_test if x_test_item < x_test_p99]
     figure_name = data_path + '/histgram_' + varname + '_' + cal_method.__name__ + '.png'
-    plt.figure(2)
-    ax1 = plt.subplot(211)
-    ax2 = plt.subplot(212)
-    #111 累计概率分布
+    # fig, axes = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(12, 12))
+    fig, axes = plt.subplots(2, 2, sharex='row', figsize=(12, 12))
+    ax1 = axes[0, 0]
+    ax2 = axes[0, 1]
+    ax3 = axes[1, 0]
+    ax4 = axes[1, 1]
+    #411 累计概率分布
     plt.sca(ax1)
-    n, bins, patches = plt.hist(x_new, bin_num, cumulative=True, normed=1, facecolor='blue',alpha=0.3) # alpha: 透明度, normed: 每个条状图的占比例比
+    n, bins, patches = plt.hist(x_new, bin_num, cumulative=True, normed=1, facecolor='blue',alpha=0.7)# alpha: 透明度, normed: 每个条状图的占比例比
     # y = mlab.normpdf(bins, mu, sigma)  #python2.7代码
     # y = scipy.stats.norm.cdf(bins, mu, sigma) #累计概率分布
     _loc, _scale = scipy.stats.chi2.fit_loc_scale(x_new, len(bins))
     y = scipy.stats.chi2.cdf(bins, df=len(bins), loc=_loc, scale=_scale)
-    plt.plot(bins, y, 'r--')
-    # plt.scatter(X, Y)  # plot
-    # plt.plot(X, Y) #line
-    text = varname + ' ' + cal_method.__name__ + ' (N = ' + str(len(x)) + ')'
+    plt.plot(bins, y, 'red')
+    text = 'train' + ' ' + varname + ' ' + cal_method.__name__ + ' (N = ' + str(len(x)) + ')'
     plt.title(text)
     # plt.xlabel(varname)
     plt.ylabel('cumulative probability')
-    #112 频数分布
     plt.sca(ax2)
+    n_test, bins_test, patches_test = plt.hist(x_test_new, bin_num, cumulative=True, normed=1, facecolor='blue',alpha=0.7)
+    _loc_test, _scale_test = scipy.stats.chi2.fit_loc_scale(x_test_new, len(bins_test))
+    y_test = scipy.stats.chi2.cdf(bins_test, df=len(bins_test), loc=_loc_test, scale=_scale_test)
+    plt.plot(bins_test, y_test, 'yellow')
+    text = 'test' + ' ' + varname + ' ' + cal_method.__name__ + ' (N = ' + str(len(x)) + ')'
+    plt.title(text)
+    # plt.xlabel(varname)
+    plt.ylabel('cumulative probability')
+    # plt.scatter(X, Y)  # plot
+    # plt.plot(X, Y) #line
+    #421 频数分布
+    plt.sca(ax3)
     sns.distplot(x_new, bins=bin_num, kde=False) #也可以选择要核函数
+    plt.title('train')
+    plt.xlabel(varname)
+    plt.ylabel('freq')
+    plt.sca(ax4)
+    sns.distplot(x_test_new, bins=bin_num, kde=False)
+    plt.title('test')
     plt.xlabel(varname)
     plt.ylabel('freq')
     plt.savefig(figure_name)
@@ -105,12 +127,12 @@ if __name__ == '__main__':
     df_test_all = df_test_all.sort_values(by=['buyer_admin_id','irank']).reset_index()
 
     #区分经销商和个人：新客跟老客，大客户跟小客户不能放在一起计算
-    plot_hist(df_train_all, pd.Series.count, 'item_id', 50)
-    plot_hist(df_train_all, pd.Series.mean, 'item_price', 50)
-    plot_hist(df_train_all, pd.Series.sum, 'item_price', 50)
-    plot_hist(df_train_all, pd.Series.nunique, 'item_id', 50)
-    plot_hist(df_train_all, pd.Series.nunique, 'cate_id', 50)
-    plot_hist(df_train_all, pd.Series.nunique, 'store_id', 50)
+    plot_hist(df_train_all, df_test_all, pd.Series.count, 'item_id', 50)
+    plot_hist(df_train_all, df_test_all, pd.Series.mean, 'item_price', 50)
+    plot_hist(df_train_all, df_test_all, pd.Series.sum, 'item_price', 50)
+    plot_hist(df_train_all, df_test_all, pd.Series.nunique, 'item_id', 50)
+    plot_hist(df_train_all, df_test_all, pd.Series.nunique, 'cate_id', 50)
+    plot_hist(df_train_all, df_test_all, pd.Series.nunique, 'store_id', 50)
 
     #除了图形之外，加一下距离上次购买时间间隔
     train_X = pd.concat([df_train_all[['buyer_admin_id','item_id']].groupby('buyer_admin_id').agg({'item_id':pd.Series.count}),\
@@ -130,7 +152,7 @@ if __name__ == '__main__':
     train_X_append = df_train_all[['buyer_admin_id', 'buyer_country_id']].drop_duplicates(['buyer_admin_id'], keep='last')
     train_X_final = pd.merge(train_X, train_X_append, how='left', left_on='train_X.buyer_admin_id', right_on='buyer_admin_id')
     train_X_sample = train_X_final.sample(frac=0.1)
-    train_X_sample.to_csv(data_path + '/' + 'Antai_AE_round1_train_desc_sample.csv', index=False)
+    # train_X_sample.to_csv(data_path + '/' + 'Antai_AE_round1_train_desc_sample.csv', index=False)
 
     test_X = pd.concat([df_test_all[['buyer_admin_id', 'item_id']].groupby('buyer_admin_id').agg({'item_id': pd.Series.count}),\
                         df_test_all[['buyer_admin_id', 'item_price']].groupby('buyer_admin_id').agg({'item_price': pd.Series.mean}),
@@ -148,9 +170,13 @@ if __name__ == '__main__':
 
     test_X_append = df_test_all[['buyer_admin_id', 'buyer_country_id']].drop_duplicates(['buyer_admin_id'], keep='last')
     test_X_final = pd.merge(test_X, test_X_append, how='left', left_on='test_X.buyer_admin_id', right_on='buyer_admin_id')
-    test_X_final.to_csv(data_path + '/' + 'Antai_AE_round1_test_desc_total.csv', index=False)
+    # test_X_final.to_csv(data_path + '/' + 'Antai_AE_round1_test_desc_total.csv', index=False)
 
     plot_tsne(train_X_sample, test_X_final, 2)
+    plot_hist(train_X_final, test_X_final, pd.Series.mean, 'order_time_gap', 50)
 
-    #t - SNE和UMAP聚类
-    #建立产品倒排表 产品 <-> 用户 产品本身还有特征可以做
+    #t-SNE和UMAP聚类（UMAP聚类没做，t-SNE的结论是xx国跟yy国不同，到底怎么个不同法，从描述性统计上基本看不出来
+    #使用FM方法，没法考虑时间穿越，只能在特征上面体现这种特点了吧 train:0713~0831 test:0717~0831
+    df_train_all.head(20000).to_csv(data_path + '/' + 'Antai_AE_round1_df_train_head.csv', index=False)
+    df_train_all.to_csv(data_path + '/' + 'Antai_AE_round1_df_train_all.csv', index=False)
+    df_test_all.to_csv(data_path + '/' + 'Antai_AE_round1_df_test_all.csv', index=False)
