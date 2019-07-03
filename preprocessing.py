@@ -177,6 +177,10 @@ if __name__ == '__main__':
 
     #t-SNE和UMAP聚类（UMAP聚类没做，t-SNE的结论是xx国跟yy国不同，到底怎么个不同法，从描述性统计上基本看不出来
     #使用FM方法，没法考虑时间穿越，只能在特征上面体现这种特点了吧 train:0713~0831 test:0717~0831
-    df_train_all.head(20000).to_csv(data_path + '/' + 'Antai_AE_round1_df_train_head.csv', index=False)
-    df_train_all.to_csv(data_path + '/' + 'Antai_AE_round1_df_train_all.csv', index=False)
-    df_test_all.to_csv(data_path + '/' + 'Antai_AE_round1_df_test_all.csv', index=False)
+    df_train_user_item = df_train_all.groupby(['buyer_admin_id','item_id','cate_id','store_id','item_price']).agg({'item_id':pd.Series.count})
+    df_train_user_item.rename(columns={'item_id':'item_freq'}, inplace=True)
+    df_train_user_item.head(50000).to_csv(data_path + '/' + 'Antai_AE_round1_df_train_user_item_subset.csv')
+    df_train_user_item.to_csv(data_path + '/' + 'Antai_AE_round1_df_train_user_item_all.csv')
+    df_test_user_item = df_test_all.groupby(['buyer_admin_id','item_id','cate_id','store_id','item_price']).agg({'item_id':pd.Series.count})
+    df_test_user_item.rename(columns={'item_id': 'item_freq'}, inplace=True)
+    df_test_user_item.to_csv(data_path + '/' + 'Antai_AE_round1_df_test_user_item_all.csv')
