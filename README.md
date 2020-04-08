@@ -17,3 +17,4 @@ https://tensorflow.google.cn/guide/feature_columns
 # Data Extraction
 python + Linux + Selenium + webdriver installation https://www.jianshu.com/p/cbc01d32c7b0
 unknown error: "DevToolsActivePort file doesn't exist" https://blog.csdn.net/u012206617/article/details/101623098
+[1586309410.689][SEVERE]: bind() returned an error, errno=99: Cannot assign requested address (99) https://stackoverflow.com/questions/25080500/when-running-webdriver-with-chrome-browser-getting-message-only-local-connect
