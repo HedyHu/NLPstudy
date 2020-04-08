@@ -22,3 +22,5 @@ unknown error: "DevToolsActivePort file doesn't exist" https://blog.csdn.net/u01
 [1586309410.689][SEVERE]: bind() returned an error, errno=99: Cannot assign requested address (99) https://stackoverflow.com/questions/25080500/when-running-webdriver-with-chrome-browser-getting-message-only-local-connect
 
 remote deployment: pycharm professional version or Visual Studio Code https://python.freelycode.com/contribution/detail/1638
+
+selenium official document https://www.selenium.dev/selenium/docs/api/py/api.html#webdriver-chrome
